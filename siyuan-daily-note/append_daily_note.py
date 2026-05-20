@@ -199,15 +199,13 @@ def normalize_tag_label(tag: str) -> str:
 
 
 def build_paragraph_dom(text: str, tag_label: str) -> str:
-    """DOM appendBlock: real inline tag after text, wrapped in parentheses."""
+    """DOM for appendBlock: markdown #tag# is not parsed as inline tags via API."""
     body = html.escape(text, quote=True)
     tag = html.escape(tag_label, quote=True)
-    # e.g. test 123 (HermInE) — parens as text spans, label as textmark tag
     return (
         '<motion.div class="p" data-type="NodeParagraph">'
-        f'<span data-type="text">{body} (</span>'
+        f'<span data-type="text">{body}</span><br />'
         f'<span data-type="tag" data-info="">{tag}</span>'
-        '<span data-type="text">)</span>'
         "</motion.div>"
     )
 

@@ -33,6 +33,6 @@ Document IDs are cached in `~/.hermes/state/siyuan-daily-note.json`. See `SKILL.
 3. Else SQL lookup by `hpath`
 4. Else `createDocWithMd` with empty markdown
 5. `setBlockAttrs` with `custom-dailynote-<YMD>` = `<YMD>`
-6. `appendBlock` with `dataType: "markdown"`
+6. `appendBlock` with `dataType: "dom"` (paragraph + inline tag textmark; see `references/inline-tags-via-api.md`)
 
 See `references/extension-attribute.md` for attribute naming.

@@ -41,7 +41,7 @@ The skill activates when your message starts with one of these prefixes (case-in
 | `Dailynote` / `dailynote` | `Dailynote: Standup notes` |
 | `daily note` | `daily note, Meeting notes` |
 
-The text after the delimiter is appended as a new block, followed by the configured tag (default `#HermInE#`, SiYuan inline-tag syntax).
+The text after the delimiter is appended as one paragraph with an inline tag (default label `HermInE`). The script uses SiYuan DOM textmarks because `appendBlock` with markdown does not register `#tag#` as a real tag.
 
 Install the skill in your Hermes skills directory and ensure `SIYUAN_TOKEN` and `SIYUAN_URL` are set. See [SKILL.md](SKILL.md) for the full agent procedure.
 
@@ -83,7 +83,7 @@ Configure the calendar plugin’s daily-note notebook and path to match this ski
 ## Conventions
 
 - **Notebook:** `Daily Notes` (override in `~/.hermes/state/siyuan-daily-note.json` → `notebook_name`, or Hermes memory `siyuan.daily_notebook`)
-- **Tag:** `#HermInE#` (override via `daily_tag` in state or `siyuan.daily_tag` in memory). Must use SiYuan’s `#name#` form — not `(#name)`.
+- **Tag:** `HermInE` (override via `daily_tag`; `#HermInE#` in config is normalized to the label)
 - **Date:** UTC for “today” (near local midnight, the active day may differ from your timezone)
 - **Path:** Do not include the notebook name in API paths—use `/daily note/...`, not `/Daily Notes/daily note/...`
 
@@ -96,7 +96,7 @@ Document IDs are cached at:
 ```json
 {
   "notebook_name": "Daily Notes",
-  "daily_tag": "#HermInE#",
+  "daily_tag": "HermInE",
   "doc_ids": { "20260518": "20260518120000-abc1234" }
 }
 ```

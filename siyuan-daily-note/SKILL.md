@@ -20,7 +20,7 @@ This skill appends a line of text to **today's** daily note in SiYuan. Multiple 
 
 - Notebook: **Daily Notes** (override via state file `notebook_name` or memory `siyuan.daily_notebook`)
 - Path: `/daily note/YYYY/MM/YYYY-MM-DD.sy` (UTC, zero-padded month/day)
-- Tag after each entry: `#HermInE#` — SiYuan inline tag syntax (override via state file `daily_tag` or memory `siyuan.daily_tag`). Do not use `(#…)`; parentheses are not valid in tags and SiYuan will not index them.
+- Tag after each entry, inline in parentheses: `your text (HermInE)` — real SiYuan inline tag via DOM `textmark` (override label via `daily_tag` in state or `siyuan.daily_tag`). Config may be `HermInE`, `#HermInE#`, or `(#HermInE)` — normalized to the label. No line break before the tag.
 - Extension attribute: `custom-dailynote-<YYYYMMDD>` = `<YYYYMMDD>` (set via `setBlockAttrs`, SiYuan native format)
 - Never delete or overwrite existing blocks; only append
 
@@ -77,7 +77,7 @@ The script persists today's document ID in:
 ```json
 {
   "notebook_name": "Daily Notes",
-  "daily_tag": "#HermInE#",
+  "daily_tag": "HermInE",
   "doc_ids": { "20260518": "20260518120000-abc1234" }
 }
 ```
@@ -92,7 +92,7 @@ Only the current `ymd` entry is kept.
 4. Else SQL lookup by `hpath` `/daily note/YYYY/MM/YYYY-MM-DD` (oldest `type=d` match)
 5. If still missing: `createDocWithMd` with empty `markdown`
 6. `setBlockAttrs` with `custom-dailynote-<YMD>` = `<YMD>` if not already set (repairs legacy docs)
-7. `appendBlock` with user text + tag; retry lookup on append failure
+7. `appendBlock` (`dataType: "dom"`) with user text + inline tag textmark; retry lookup on append failure
 8. Save `doc_id` to state file
 
 ## Do NOT
@@ -117,6 +117,7 @@ The user's line is appended as a new block in `/daily note/<YEAR>/<MONTH>/<YYYY-
 - `scripts/append_daily_note.py` — canonical implementation
 - `references/python-append-example.md` — usage notes for the script
 - `references/extension-attribute.md` — `custom-dailynote-<YYYYMMDD>` attribute
+- `references/inline-tags-via-api.md` — why DOM textmarks are used for `HermInE`
 - `references/cleanup-stale-ids.md` — Hermes memory cleanup
 - `references/lesson-learned-document-reuse.md` — why append + state cache
 - `references/flat-vs-hierarchical-note.md` — one document per UTC day
