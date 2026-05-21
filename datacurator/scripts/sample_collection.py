@@ -15,7 +15,7 @@ from _lib import (  # noqa: E402
     emit_json,
     get_collection,
     load_config,
-    load_dataframe,
+    load_dataframe_for_collection,
     load_state,
     save_state,
 )
@@ -39,7 +39,7 @@ def main() -> None:
             emit_error("No collections in state. Run discover_collections.py first.")
         col = get_collection(state, args.collection)
         n = args.n or int(cfg.get("profiling", {}).get("sample_rows_default", 8))
-        df = load_dataframe(col)
+        df = load_dataframe_for_collection(col, cfg, sample_only=True)
         sample = diverse_sample(df, n)
         state.setdefault("samples", {})[args.collection] = sample
         state["samples_updated_at"] = datetime.now(timezone.utc).isoformat()

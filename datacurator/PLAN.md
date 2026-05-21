@@ -279,9 +279,25 @@ python3 scripts/query_collection.py --collection "Algae and Protists" \
 
 ---
 
+## Large CSV scale (disk vs context)
+
+| Concern | Approach |
+|---------|----------|
+| CSV on disk | May be 100+ MB; **never** in model context |
+| System prompt | **Max ~2 MB** (`prompt.max_total_chars` = 2 097 152) for template + collections block |
+| Profiling on disk | ≥ **2 MB** file → sampled profile (`large_file_threshold_mb`: 2) |
+| Query | Full pandas load in script only (RAM-bound); low `--limit`; future: DuckDB/Polars |
+
+Documented in [`references/large-collections.md`](references/large-collections.md) and strengthened [`prompt_template.txt`](prompt_template.txt).
+
+## Multilingual search
+
+User-language terms alone miss rows. Agent expands each concept to **English + Latin/scientific stems** and uses regex OR in `str.contains` across multiple columns. Helper: `scripts/suggest_search_terms.py`. See [`references/multilingual-search.md`](references/multilingual-search.md).
+
 ## Out of scope (v1)
 
 - MCP server / direct `mcp-csv-database` integration
 - CSV write/export
 - Automatic Hermes `config.yaml` changes
 - Host-side implementation of model switching (documented as agent procedure; Hermes must support system-prompt override per thread)
+- Chunked/streaming query engine for 100+ MB files (queries still load full CSV in pandas)

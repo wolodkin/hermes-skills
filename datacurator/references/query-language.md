@@ -1,6 +1,18 @@
 # datacurator query language
 
-Use `query_collection.py` only. Tool arguments are always in **English** (translate user questions first).
+Use `query_collection.py` only. CLI flags are in English. **Search terms** should cover the user's language plus **English and Latin/scientific** variants (see [multilingual-search.md](multilingual-search.md)).
+
+## Multilingual OR search (recommended)
+
+```bash
+python3 scripts/suggest_search_terms.py --term "Holz" --lang de
+# use where_clause from JSON output:
+
+python3 scripts/query_collection.py \
+  --collection "Algae and Protists" \
+  --where "(Taxon.str.contains('Holz|wood|lign|lignu|xyl', case=False, na=False) | Substrat.str.contains('Holz|wood|lign|lignu|xyl', case=False, na=False))" \
+  --limit 30
+```
 
 ## Basic filter
 

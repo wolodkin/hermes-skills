@@ -14,9 +14,8 @@ from _lib import (  # noqa: E402
     emit_json,
     get_collection,
     load_config,
-    load_dataframe,
     load_state,
-    profile_dataframe,
+    profile_collection_csv,
     save_state,
 )
 
@@ -32,8 +31,7 @@ def main() -> None:
         if not state.get("collections"):
             emit_error("No collections in state. Run discover_collections.py first.")
         col = get_collection(state, args.collection)
-        df = load_dataframe(col)
-        profile = profile_dataframe(df, cfg)
+        profile = profile_collection_csv(Path(col["csv_path"]), cfg)
         state.setdefault("profiles", {})[args.collection] = profile
         state["profiles_updated_at"] = datetime.now(timezone.utc).isoformat()
         save_state(state)

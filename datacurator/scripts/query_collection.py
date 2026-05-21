@@ -10,13 +10,16 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _lib import (  # noqa: E402
     apply_query,
+    csv_file_size_mb,
     emit_error,
     emit_json,
     get_collection,
+    is_large_csv,
     load_config,
     load_dataframe,
     load_state,
 )
+from pathlib import Path
 
 
 def main() -> None:
@@ -44,6 +47,7 @@ def main() -> None:
         if not state.get("collections"):
             emit_error("No collections in state. Run discover_collections.py first.")
         col = get_collection(state, args.collection)
+        csv_path = Path(col["csv_path"])
         df = load_dataframe(col)
         select = [c.strip() for c in args.select.split(",")] if args.select else None
 
@@ -59,7 +63,16 @@ def main() -> None:
             invalid_coords=args.invalid_coords,
             limit=limit,
         )
-        emit_json({"ok": True, "collection": args.collection, **result})
+        payload: dict = {"ok": True, "collection": args.collection, **result}
+        mb = round(csv_file_size_mb(csv_path), 2)
+        payload["file_size_mb"] = mb
+        if is_large_csv(csv_path, cfg):
+            payload["large_file"] = True
+            payload["hint"] = (
+                "Full CSV loaded in script only; keep --limit low. "
+                "Do not paste raw results into chat."
+            )
+        emit_json(payload)
     except KeyError as e:
         emit_error(str(e))
     except Exception as e:

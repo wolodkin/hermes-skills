@@ -100,13 +100,16 @@ def discover_collections(source_root: Path) -> dict[str, Any]:
             continue
 
         description = txt_files[0].read_text(encoding="utf-8").strip()
+        csv_path = csv_files[0].resolve()
+        size_mb = round(csv_path.stat().st_size / (1024 * 1024), 2)
         collections.append(
             {
                 "name": name,
                 "folder": str(folder.resolve()),
-                "csv_path": str(csv_files[0].resolve()),
+                "csv_path": str(csv_path),
                 "txt_path": str(txt_files[0].resolve()),
                 "description": description,
+                "file_size_mb": size_mb,
             }
         )
 
@@ -118,15 +121,79 @@ def discover_collections(source_root: Path) -> dict[str, Any]:
     }
 
 
-def read_csv_ro(csv_path: Path) -> pd.DataFrame:
+def _read_csv_with_sep(csv_path: Path, **kwargs: Any) -> pd.DataFrame:
     for sep in (",", ";", "\t"):
         try:
-            df = pd.read_csv(csv_path, sep=sep, low_memory=False, dtype=str)
+            df = pd.read_csv(csv_path, sep=sep, low_memory=False, dtype=str, **kwargs)
             if df.shape[1] > 1:
                 return df
         except Exception:
             continue
-    return pd.read_csv(csv_path, low_memory=False, dtype=str)
+    return pd.read_csv(csv_path, low_memory=False, dtype=str, **kwargs)
+
+
+def read_csv_ro(csv_path: Path) -> pd.DataFrame:
+    return _read_csv_with_sep(csv_path)
+
+
+def read_csv_sample(csv_path: Path, max_rows: int) -> pd.DataFrame:
+    return _read_csv_with_sep(csv_path, nrows=max_rows)
+
+
+def count_csv_rows(csv_path: Path) -> int:
+    with csv_path.open("rb") as f:
+        lines = sum(1 for _ in f)
+    return max(0, lines - 1)
+
+
+def csv_file_size_mb(csv_path: Path) -> float:
+    return csv_path.stat().st_size / (1024 * 1024)
+
+
+def is_large_csv(csv_path: Path, cfg: dict[str, Any]) -> bool:
+    threshold = float(cfg.get("profiling", {}).get("large_file_threshold_mb", 2))
+    return csv_file_size_mb(csv_path) >= threshold
+
+
+def load_dataframe_for_collection(
+    collection: dict[str, Any], cfg: dict[str, Any] | None = None, *, sample_only: bool = False
+) -> pd.DataFrame:
+    path = Path(collection["csv_path"])
+    if sample_only:
+        profiling = (cfg or {}).get("profiling", {})
+        cap = int(profiling.get("profile_sample_rows", 20_000))
+        if is_large_csv(path, cfg or {}):
+            return read_csv_sample(path, cap)
+    return read_csv_ro(path)
+
+
+def load_dataframe(collection: dict[str, Any]) -> pd.DataFrame:
+    return read_csv_ro(Path(collection["csv_path"]))
+
+
+def profile_collection_csv(csv_path: Path, cfg: dict[str, Any]) -> dict[str, Any]:
+    mb = round(csv_file_size_mb(csv_path), 2)
+    large = is_large_csv(csv_path, cfg)
+    profiling = cfg.get("profiling", {})
+    if not large:
+        df = read_csv_ro(csv_path)
+        profile = profile_dataframe(df, cfg)
+        profile["file_size_mb"] = mb
+        profile["large_file"] = False
+        profile["profile_mode"] = "full"
+        return profile
+
+    row_count = count_csv_rows(csv_path)
+    sample_n = min(int(profiling.get("profile_sample_rows", 20_000)), row_count)
+    df = read_csv_sample(csv_path, sample_n)
+    profile = profile_dataframe(df, cfg)
+    profile["row_count"] = row_count
+    profile["file_size_mb"] = mb
+    profile["large_file"] = True
+    profile["profile_mode"] = "sampled"
+    profile["profile_sample_rows"] = sample_n
+    profile["stats_approximate"] = sample_n < row_count
+    return profile
 
 
 def get_collection(state: dict[str, Any], name: str) -> dict[str, Any]:
@@ -289,11 +356,25 @@ def diverse_sample(
     }
 
 
-def profile_summary_text(profile: dict[str, Any]) -> str:
+def _truncate_cell(value: Any, max_len: int) -> str:
+    s = "" if pd.isna(value) else str(value).strip()
+    if len(s) <= max_len:
+        return s.replace('"', "'")
+    return s[: max_len - 1] + "…"
+
+
+def profile_summary_text(profile: dict[str, Any], cfg: dict[str, Any] | None = None) -> str:
     parts = [
         f"{profile['row_count']} rows",
         f"{profile['column_count']} columns",
+        f"{profile.get('file_size_mb', '?')} MB on disk",
     ]
+    if profile.get("large_file"):
+        parts.append("LARGE_FILE: use scripts only, never inline full CSV")
+    if profile.get("profile_mode") == "sampled":
+        parts.append(
+            f"stats from first {profile.get('profile_sample_rows', '?')} rows (approximate)"
+        )
     if profile.get("duplicate_rows"):
         parts.append(f"{profile['duplicate_rows']} duplicate rows")
     if profile.get("high_null_columns"):
@@ -302,7 +383,21 @@ def profile_summary_text(profile: dict[str, Any]) -> str:
         parts.append(f"high null: {', '.join(cols)}{suffix}")
     if profile.get("json_like_columns"):
         cols = profile["json_like_columns"][:3]
-        parts.append(f"structured text columns: {', '.join(cols)}")
+        parts.append(f"ontology/json-like: {', '.join(cols)}")
+
+    profiling = (cfg or {}).get("profiling", {})
+    max_cols = int(profiling.get("prompt_max_columns_listed", 53))
+    col_names = [c["name"] for c in profile.get("columns", [])[:max_cols]]
+    if col_names:
+        parts.append("columns: " + ", ".join(col_names))
+
+    key_cols = profiling.get("prompt_key_columns_for_top_values", DEFAULT_KEY_COLUMNS)
+    tops = profile.get("categorical_top_values", {})
+    for kc in key_cols:
+        if kc in tops and tops[kc]:
+            vals = ", ".join(f"{x['value']}({x['count']})" for x in tops[kc][:5])
+            parts.append(f"top {kc}: {vals}")
+
     return "; ".join(parts)
 
 
@@ -410,21 +505,50 @@ def format_collections_block(
     collections: list[dict[str, Any]],
     profiles: dict[str, Any],
     samples: dict[str, Any],
+    cfg: dict[str, Any] | None = None,
 ) -> str:
-    lines: list[str] = []
+    profiling = (cfg or {}).get("profiling", {})
+    prompt_cfg = (cfg or {}).get("prompt", {})
+    cell_max = int(profiling.get("prompt_sample_cell_max_len", 100))
+    per_col_cap = int(profiling.get("prompt_max_chars_per_collection", 8_000))
+    total_cap = int(prompt_cfg.get("max_total_chars", 2_097_152))
+
+    blocks: list[str] = []
+    total_len = 0
+
     for col in collections:
         name = col["name"]
-        lines.append(f'- name: "{name}"')
+        chunk_lines = [f'- name: "{name}"']
+        if col.get("file_size_mb") is not None:
+            chunk_lines.append(f'  file_size_mb: {col["file_size_mb"]}')
         desc = col.get("description", "").replace('"', '\\"')
-        lines.append(f'  description: "{desc}"')
+        if len(desc) > 2000:
+            desc = desc[:1999] + "…"
+        chunk_lines.append(f'  description: "{desc}"')
         prof = profiles.get(name)
         if prof:
-            summary = profile_summary_text(prof).replace('"', '\\"')
-            lines.append(f'  profile_summary: "{summary}"')
+            summary = profile_summary_text(prof, cfg).replace('"', '\\"')
+            chunk_lines.append(f'  profile_summary: "{summary}"')
         samp = samples.get(name)
         if samp and samp.get("sample_rows"):
-            lines.append("  sample_rows:")
+            chunk_lines.append("  sample_rows:  # preview only — query scripts for facts")
             for row in samp["sample_rows"]:
-                parts = [f'"{k}": "{str(v).replace(chr(34), chr(39))[:120]}"' for k, v in row.items()]
-                lines.append(f"    - {{{', '.join(parts)}}}")
-    return "\n".join(lines)
+                parts = [
+                    f'"{k}": "{_truncate_cell(v, cell_max)}"' for k, v in row.items()
+                ]
+                chunk_lines.append(f"    - {{{', '.join(parts)}}}")
+
+        chunk = "\n".join(chunk_lines)
+        if len(chunk) > per_col_cap:
+            chunk = chunk[: per_col_cap - 1] + "…"
+        if total_len + len(chunk) > total_cap:
+            chunk_lines_short = chunk_lines[:4]
+            chunk_lines_short.append(
+                '  note: "further collections omitted from prompt (max_total_chars); use discover_collections.py"'
+            )
+            blocks.append("\n".join(chunk_lines_short))
+            break
+        blocks.append(chunk)
+        total_len += len(chunk)
+
+    return "\n".join(blocks)

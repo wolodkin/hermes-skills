@@ -16,12 +16,14 @@ from _lib import (  # noqa: E402
     emit_error,
     format_collections_block,
     get_collection,
+    is_large_csv,
     load_config,
-    load_dataframe,
+    load_dataframe_for_collection,
     load_state,
-    profile_dataframe,
+    profile_collection_csv,
     save_state,
 )
+from pathlib import Path
 
 
 def _run_script(name: str) -> None:
@@ -51,8 +53,7 @@ def _ensure_profile(cfg: dict, state: dict, name: str) -> dict:
     profiles = state.setdefault("profiles", {})
     if name not in profiles:
         col = get_collection(state, name)
-        df = load_dataframe(col)
-        profiles[name] = profile_dataframe(df, cfg)
+        profiles[name] = profile_collection_csv(Path(col["csv_path"]), cfg)
         save_state(state)
     return profiles[name]
 
@@ -62,8 +63,10 @@ def _ensure_sample(cfg: dict, state: dict, name: str) -> dict:
     if name not in samples:
         col = get_collection(state, name)
         n = int(cfg.get("profiling", {}).get("prompt_sample_rows", 3))
-        df = load_dataframe(col)
+        df = load_dataframe_for_collection(col, cfg, sample_only=True)
         samples[name] = diverse_sample(df, n)
+        if is_large_csv(Path(col["csv_path"]), cfg):
+            samples[name]["sample_scope"] = "from_head_or_profile_sample_rows_not_full_file"
         save_state(state)
     return samples[name]
 
@@ -91,7 +94,7 @@ def build_prompt(cfg: dict, refresh: bool = False) -> str:
         profiles[name] = _ensure_profile(cfg, state, name)
         samples[name] = _ensure_sample(cfg, state, name)
 
-    block = format_collections_block(state["collections"], profiles, samples)
+    block = format_collections_block(state["collections"], profiles, samples, cfg)
     return template.replace(COLLECTIONS_MARKER, block)
 
 
@@ -107,6 +110,13 @@ def main() -> None:
     try:
         cfg = load_config()
         prompt = build_prompt(cfg, refresh=args.refresh)
+        max_chars = int(cfg.get("prompt", {}).get("max_total_chars", 2_097_152))
+        if len(prompt) > max_chars:
+            prompt = prompt[: max_chars - 80] + "\n…\n# prompt truncated to prompt.max_total_chars (~2 MiB)\n"
+            print(
+                f"warning: prompt truncated to {max_chars} chars (~2 MiB cap)",
+                file=sys.stderr,
+            )
         sys.stdout.write(prompt)
     except SystemExit:
         raise

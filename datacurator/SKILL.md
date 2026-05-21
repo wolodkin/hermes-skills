@@ -99,10 +99,14 @@ Runs as part of **Activate** above, not on every unrelated Hermes message:
 
 ## Per-question workflow
 
-1. Translate non-English questions to English for script arguments.
-2. Run `query_collection.py` with `--where`, `--select`, `--groupby`, `--count-only`, etc.
-3. Summarize JSON results — do not paste full CSVs or hundreds of rows.
-4. Maximum 3 attempts; if data is insufficient, say so.
+1. Parse the user's search concept in their language.
+2. Expand to **English and Latin/scientific** variants (never query a single translation only).  
+   Helper: `python3 scripts/suggest_search_terms.py --term "…" --lang de`
+3. Run `query_collection.py` with an OR `str.contains` pattern across relevant columns (`Taxon`, `Substrat`, `Habitat`, `Bemerkung`, …).
+4. Summarize JSON results — do not paste full CSVs or hundreds of rows.
+5. Up to 3 attempts: broaden EN/LA stems or columns, then narrow if too noisy; if still empty, say so.
+
+See [`references/multilingual-search.md`](references/multilingual-search.md).
 
 ## Phase scripts
 
@@ -115,15 +119,30 @@ Runs as part of **Activate** above, not on every unrelated Hermes message:
 
 State file: `~/.hermes/state/datacurator.json`
 
+## Large CSVs and context budget
+
+**CSV on disk** can be 100+ MB. **System prompt** (including collection metadata) is capped at **~2 MB** (`prompt.max_total_chars` in `config.json`, default 2 097 152). Nemotron 1M context is not used to hold raw tables.
+
+| Layer | Behavior |
+|-------|----------|
+| System prompt | `build_prompt.py` — max ~2 MB total; ~8k chars per collection (defaults) |
+| Profiling | Sampled mode when CSV ≥ **2 MB** on disk (`large_file_threshold_mb`) |
+| Queries | Full file read in script only — `--count-only`, tight `--where`, low `--limit` |
+
+See [`references/large-collections.md`](references/large-collections.md).
+
 ## Do NOT
 
 - Modify files under `csv_source_folder_global_path`
-- Dump entire CSV contents into chat
+- Dump entire CSV contents into chat (even with 1M context)
 - Answer about collections not listed in discovery output
 - Use hypothetical data when queries return nothing
+- Treat `sample_rows` in the prompt as complete evidence
 
 ## References
 
 - [`references/query-language.md`](references/query-language.md)
 - [`references/profiling-fields.md`](references/profiling-fields.md)
+- [`references/large-collections.md`](references/large-collections.md)
+- [`references/multilingual-search.md`](references/multilingual-search.md)
 - [`scripts/`](scripts/) — canonical implementation

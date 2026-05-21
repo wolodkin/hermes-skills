@@ -3,9 +3,37 @@
     "prompt_template": "./prompt_template.txt",
     "profiling": {
         "max_top_values": 10,
+        "max_top_values_comment": "Max distinct values per column included in profile JSON (categorical_top_values) and in prompt top-value lines. Recommendation: 5–15. Lower = smaller prompt; higher = richer hints for low-cardinality fields.",
+
         "high_null_threshold_pct": 90,
+        "high_null_threshold_pct_comment": "Columns with at least this percent null/empty ('-' counts as empty) are listed as high_null_columns in the profile. Recommendation: 85–95 for herbarium CSVs with many sparse annotation fields.",
+
         "sample_rows_default": 8,
-        "prompt_sample_rows": 3
+        "sample_rows_default_comment": "Default row count for sample_collection.py when --n is omitted. Recommendation: 5–12. Used for exploration, not for final answers (use query_collection.py for facts).",
+
+        "prompt_sample_rows": 3,
+        "prompt_sample_rows_comment": "Number of diverse example rows embedded per collection in build_prompt.py. Recommendation: 2–5. Keep low to save prompt budget (~2 MiB total cap).",
+
+        "large_file_threshold_mb": 2,
+        "large_file_threshold_mb_comment": "CSV files at or above this size on disk use sampled profiling (line count + stats from first profile_sample_rows only). Recommendation: 2 MB aligns with prompt context budget; do not raise thinking a 1M context window can hold the file.",
+
+        "profile_sample_rows": 10000,
+        "profile_sample_rows_comment": "Rows read from disk for stats when large_file_threshold_mb applies (and for prompt sampling on large files). Recommendation: 5000–20000. Higher = more accurate sampled stats but slower and more RAM.",
+
+        "prompt_max_columns_listed": 40,
+        "prompt_max_columns_listed_comment": "Max column names appended to profile_summary in the system prompt. Recommendation: 30–53 (all columns if small collections). Truncates the list only in prompt text, not in stored profile JSON.",
+
+        "prompt_key_columns_for_top_values": ["Taxon", "Familie", "Typus", "Kontinent", "Sammler"],
+        "prompt_key_columns_for_top_values_comment": "Columns for which top value counts are inlined into profile_summary in the prompt (must exist in CSV). Recommendation: pick 4–8 high-signal fields per collection type; avoid huge free-text columns.",
+
+        "prompt_sample_cell_max_len": 80,
+        "prompt_sample_cell_max_len_comment": "Max characters per cell in prompt sample_rows (long ontology JSON is truncated). Recommendation: 60–120. Lower = smaller prompt; higher = more readable samples.",
+
+        "prompt_max_chars_per_collection": 8000,
+        "prompt_max_chars_per_collection_comment": "Soft cap on characters for one collection block inside {{COLLECTIONS_BLOCK}}. Recommendation: 4000–10000. Many collections share prompt.max_total_chars (~2 MiB); lower per collection if you have dozens of folders."
+    },
+    "prompt": {
+        "max_total_chars": 2097152
     },
     "query": {
         "default_limit": 100,

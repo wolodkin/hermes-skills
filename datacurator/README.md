@@ -12,6 +12,8 @@ Read-only exploration and Q&A over Senckenberg collection CSVs. One folder per c
 
 Why delegate? The enriched prompt (descriptions, profiles, sample rows) needs a stable system context; keeping it on the session model avoids squeezing that into every Hermes turn.
 
+**Scale:** CSV files on disk can be 100+ MB (never inlined into context). The **built system prompt is capped at ~2 MB** (`prompt.max_total_chars`). Profiling switches to sampled mode for CSV ≥ 2 MB on disk. See [references/large-collections.md](references/large-collections.md).
+
 See [SKILL.md](SKILL.md) for the full procedure and memory key `datacurator.session_active`.
 
 ## Quick start
@@ -36,7 +38,7 @@ python3 scripts/query_collection.py \
 | [config.json](config.json) | User-editable paths and limits |
 | [prompt_template.txt](prompt_template.txt) | Base system prompt; `{{COLLECTIONS_BLOCK}}` filled by `build_prompt.py` |
 | [scripts/](scripts/) | Discovery, profile, sample, query, prompt build |
-| [references/](references/) | Query syntax and profile field docs |
+| [references/](references/) | Query syntax, multilingual search, large CSVs |
 
 ## Data layout
 
