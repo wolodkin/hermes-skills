@@ -1,6 +1,6 @@
 # Profiling output fields
 
-`profile_collection.py` writes a JSON profile per collection to `~/.hermes/state/datacurator.json` under `profiles.<collection_name>`.
+`profile_collection.py` writes a JSON profile per collection to `~/.hermes/state/datacurator-python-pandas.json` under `profiles.<collection_name>`.
 
 | Field | Meaning |
 |-------|---------|

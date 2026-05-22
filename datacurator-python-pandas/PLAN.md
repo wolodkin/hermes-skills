@@ -1,12 +1,12 @@
 ---
-name: datacurator Skill
-overview: Hermes skill "datacurator" with configurable data path, four phases (discovery → profiling → sampling → CLI queries), prompt enrichment via build_prompt.py — similar to siyuan-daily-note, no MCP server.
+name: datacurator-python-pandas Skill
+overview: Hermes skill "datacurator-python-pandas" with configurable data path, four phases (discovery → profiling → sampling → CLI queries), prompt enrichment via build_prompt.py — similar to siyuan-daily-note, no MCP server.
 todos:
   - id: rename-scaffold
-    content: Rename data-curator → datacurator, .gitignore/config paths, requirements.txt, _lib.py
+    content: Rename data-curator → datacurator-python-pandas, .gitignore/config paths, requirements.txt, _lib.py
     status: completed
   - id: phase1-discover
-    content: discover_collections.py + state ~/.hermes/state/datacurator.json
+    content: discover_collections.py + state ~/.hermes/state/datacurator-python-pandas.json
     status: completed
   - id: phase2-profile
     content: profile_collection.py + references/profiling-fields.md
@@ -21,24 +21,24 @@ todos:
     content: build_prompt.py — full_bundle (description + profile_summary + 2–3 sample_rows per collection)
     status: completed
   - id: skill-docs
-    content: SKILL.md, README.md, PLAN.md in datacurator/
+    content: SKILL.md, README.md, PLAN.md in datacurator-python-pandas/
     status: completed
 isProject: false
 ---
 
-# datacurator — Implementation plan
+# datacurator-python-pandas — Implementation plan
 
-**Location:** [`datacurator/PLAN.md`](PLAN.md) in the skill folder.
+**Location:** [`datacurator-python-pandas/PLAN.md`](PLAN.md) in the skill folder.
 
 ## Changes from v1
 
 | Topic | Decision |
 |-------|----------|
-| **Naming** | Use `datacurator` everywhere (no hyphen): folder, skill name, state file, scripts |
-| **Folder** | `data-curator/` renamed to `datacurator/` during implementation |
+| **Naming** | Use `datacurator-python-pandas` everywhere: folder, skill name, state file, scripts |
+| **Folder** | `data-curator/` renamed to `datacurator-python-pandas/` during implementation |
 | **Queries** | CLI-only (no MCP server) |
 | **Prompt** | User text in [`prompt_template.txt`](prompt_template.txt) kept; `{{COLLECTIONS_BLOCK}}` filled by `build_prompt.py` |
-| **Activation** | `Hi` + `datacurator` → delegate `build_prompt.py` stdout as session system prompt; chat in curator mode |
+| **Activation** | `Hi` + `datacurator-python-pandas` → delegate `build_prompt.py` stdout as session system prompt; chat in curator mode |
 | **Deactivation** | `Ciao` / `ciao` → restore default Hermes model/prompt |
 
 ---
@@ -48,16 +48,16 @@ isProject: false
 ```mermaid
 stateDiagram-v2
   [*] --> HermesDefault: normal Hermes chat
-  HermesDefault --> CuratorMode: Hi + datacurator
+  HermesDefault --> CuratorMode: Hi + datacurator-python-pandas
   CuratorMode --> CuratorMode: user questions / scripts
   CuratorMode --> HermesDefault: Ciao
 ```
 
 | Trigger | Match (case-insensitive) | Agent action |
 |---------|--------------------------|--------------|
-| **Activate** | Message starts with `hi`, contains `datacurator` | `discover_collections.py` → `build_prompt.py` → set stdout as **system prompt** for delegated model; `datacurator.session_active=true` |
+| **Activate** | Message starts with `hi`, contains `datacurator-python-pandas` | `discover_collections.py` → `build_prompt.py` → set stdout as **system prompt** for delegated model; `datacurator-python-pandas.session_active=true` |
 | **Work** | While session active | Curator persona + CLI scripts; do not drop enriched prompt mid-session |
-| **Deactivate** | Message is exactly `ciao` (trimmed) | `datacurator.session_active=false`; restore original Hermes system prompt/model |
+| **Deactivate** | Message is exactly `ciao` (trimmed) | `datacurator-python-pandas.session_active=false`; restore original Hermes system prompt/model |
 
 Rationale: collection context (TXT descriptions, profiles, samples) is large; delegating one system prompt to the session model preserves context richness without repeating it in every Hermes turn.
 
@@ -122,7 +122,7 @@ flowchart TB
     enrichedPrompt[stdout system prompt]
   end
   subgraph state [Cache]
-    stateFile["~/.hermes/state/datacurator.json"]
+    stateFile["~/.hermes/state/datacurator-python-pandas.json"]
   end
   configJson --> discover
   discover --> manifest
@@ -137,14 +137,14 @@ flowchart TB
   buildPrompt --> enrichedPrompt
 ```
 
-**Agent workflow:** User says `Hi datacurator` → `discover_collections.py` → `build_prompt.py` → **delegate stdout as system prompt** → curator chat via `query_collection.py` → user says `Ciao` → restore Hermes default.
+**Agent workflow:** User says `Hi datacurator-python-pandas` → `discover_collections.py` → `build_prompt.py` → **delegate stdout as system prompt** → curator chat via `query_collection.py` → user says `Ciao` → restore Hermes default.
 
 ---
 
 ## Planned folder layout
 
 ```
-datacurator/
+datacurator-python-pandas/
 ├── PLAN.md
 ├── SKILL.md
 ├── README.md
@@ -163,7 +163,7 @@ datacurator/
     └── profiling-fields.md
 ```
 
-Repo `.gitignore`: `datacurator/csv_source_folder_global_path/`
+Repo `.gitignore`: `datacurator-python-pandas/csv_source_folder_global_path/`
 
 ---
 
@@ -171,7 +171,7 @@ Repo `.gitignore`: `datacurator/csv_source_folder_global_path/`
 
 ```json
 {
-  "csv_source_folder_global_path": "/abs/path/to/datacurator/csv_source_folder_global_path",
+  "csv_source_folder_global_path": "/abs/path/to/datacurator-python-pandas/csv_source_folder_global_path",
   "prompt_template": "./prompt_template.txt",
   "profiling": { "max_top_values": 10, "sample_rows_default": 8 },
   "query": { "default_limit": 100, "max_limit": 1000 }
@@ -188,7 +188,7 @@ Repo `.gitignore`: `datacurator/csv_source_folder_global_path/`
 - Collection name = folder name
 - TXT content → `description` in the manifest
 
-**State:** `~/.hermes/state/datacurator.json` with `collections[]`, `last_discovery_at`, `source_root`
+**State:** `~/.hermes/state/datacurator-python-pandas.json` with `collections[]`, `last_discovery_at`, `source_root`
 
 ---
 
@@ -238,7 +238,7 @@ See [`references/query-language.md`](references/query-language.md).
   - `sample_rows` — 2–3 diverse rows (key columns: Taxon, Barcode, Fundortbeschreibung, Typus when present)
 - `build_prompt.py` runs profile + sample on demand or uses state cache
 
-**SKILL.md:** On activate (`Hi datacurator`), agent runs discovery + prompt build, then delegates stdout as system prompt before the first curator reply. On `Ciao`, agent restores Hermes default and clears `datacurator.session_active`.
+**SKILL.md:** On activate (`Hi datacurator-python-pandas`), agent runs discovery + prompt build, then delegates stdout as system prompt before the first curator reply. On `Ciao`, agent restores Hermes default and clears `datacurator-python-pandas.session_active`.
 
 **MCP wording:** Lines 3–10 in `prompt_template.txt` still say “MCP client” / “MCP Server” per user preference; **technical** access is via CLI scripts (Hermes shell tools).
 
@@ -247,7 +247,7 @@ See [`references/query-language.md`](references/query-language.md).
 ## `SKILL.md` — Frontmatter
 
 ```yaml
-name: datacurator
+name: datacurator-python-pandas
 description: Discover, profile, sample, and query Senckenberg collection CSVs read-only via bundled scripts.
 prerequisites:
   commands: [python3]
@@ -257,7 +257,7 @@ prerequisites:
 
 ## Implementation order
 
-1. Rename `data-curator` → `datacurator`, update config + `.gitignore`
+1. Rename `data-curator` → `datacurator-python-pandas`, update config + `.gitignore`
 2. `_lib.py` + `discover_collections.py` + state
 3. `profile_collection.py`, `sample_collection.py`, `query_collection.py`
 4. `build_prompt.py`
@@ -269,7 +269,7 @@ prerequisites:
 ## Test plan
 
 ```bash
-cd datacurator
+cd datacurator-python-pandas
 python3 scripts/discover_collections.py
 python3 scripts/build_prompt.py | head -40
 python3 scripts/profile_collection.py --collection "Algae and Protists"

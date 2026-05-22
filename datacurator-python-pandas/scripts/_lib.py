@@ -1,4 +1,4 @@
-"""Shared utilities for the datacurator Hermes skill."""
+"""Shared utilities for the datacurator-python-pandas Hermes skill."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from typing import Any
 import pandas as pd
 
 SKILL_DIR = Path(__file__).resolve().parent.parent
-STATE_PATH = Path.home() / ".hermes" / "state" / "datacurator.json"
+STATE_PATH = Path.home() / ".hermes" / "state" / "datacurator-python-pandas.json"
 COLLECTIONS_MARKER = "{{COLLECTIONS_BLOCK}}"
 DEFAULT_KEY_COLUMNS = [
     "AQUiLA-ID",

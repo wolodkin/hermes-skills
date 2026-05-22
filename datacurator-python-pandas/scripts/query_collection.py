@@ -23,7 +23,7 @@ from pathlib import Path
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Query a datacurator collection")
+    parser = argparse.ArgumentParser(description="Query a datacurator-python-pandas collection")
     parser.add_argument("--collection", required=True)
     parser.add_argument("--where", default=None, help="pandas query expression")
     parser.add_argument("--select", default=None, help="Comma-separated columns")

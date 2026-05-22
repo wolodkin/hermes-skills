@@ -1,4 +1,4 @@
-# datacurator (Hermes Skill)
+# datacurator-python-pandas (Hermes Skill)
 
 Read-only exploration and Q&A over Senckenberg collection CSVs. One folder per collection (CSV + TXT description).
 
@@ -6,7 +6,7 @@ Read-only exploration and Q&A over Senckenberg collection CSVs. One folder per c
 
 | User says | Effect |
 |-----------|--------|
-| `Hi datacurator` / `hi datacurator` (starts with `hi`, contains `datacurator`) | Enter **curator mode**: run `build_prompt.py`, delegate full stdout as **system prompt** to the chat model, then converse as curator |
+| `Hi datacurator-python-pandas` / `hi datacurator-python-pandas` (starts with `hi`, contains `datacurator-python-pandas`) | Enter **curator mode**: run `build_prompt.py`, delegate full stdout as **system prompt** to the chat model, then converse as curator |
 | Any message while curator mode is active | Stay in curator mode; use scripts for data questions |
 | `Ciao` / `ciao` (only) | **Exit** curator mode; restore default Hermes model/system prompt |
 
@@ -14,12 +14,12 @@ Why delegate? The enriched prompt (descriptions, profiles, sample rows) needs a 
 
 **Scale:** CSV files on disk can be 100+ MB (never inlined into context). The **built system prompt is capped at ~2 MB** (`prompt.max_total_chars`). Profiling switches to sampled mode for CSV ≥ 2 MB on disk. See [references/large-collections.md](references/large-collections.md).
 
-See [SKILL.md](SKILL.md) for the full procedure and memory key `datacurator.session_active`.
+See [SKILL.md](SKILL.md) for the full procedure and memory key `datacurator-python-pandas.session_active`.
 
 ## Quick start
 
 ```bash
-cd datacurator
+cd datacurator-python-pandas
 pip install -r requirements.txt
 # Edit config.json — set csv_source_folder_global_path
 python3 scripts/discover_collections.py
@@ -51,7 +51,7 @@ csv_source_folder_global_path/
 
 ## Hermes install
 
-Copy or link this folder to `~/.hermes/skills/datacurator/`. See [SKILL.md](SKILL.md) for the full workflow.
+Copy or link this folder to `~/.hermes/skills/datacurator-python-pandas/`. See [SKILL.md](SKILL.md) for the full workflow.
 
 ## License
 

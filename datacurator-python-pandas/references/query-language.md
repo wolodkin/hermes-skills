@@ -1,4 +1,4 @@
-# datacurator query language
+# datacurator-python-pandas query language
 
 Use `query_collection.py` only. CLI flags are in English. **Search terms** should cover the user's language plus **English and Latin/scientific** variants (see [multilingual-search.md](multilingual-search.md)).
 

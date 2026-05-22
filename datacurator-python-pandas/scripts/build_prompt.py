@@ -99,7 +99,7 @@ def build_prompt(cfg: dict, refresh: bool = False) -> str:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Build datacurator system prompt")
+    parser = argparse.ArgumentParser(description="Build datacurator-python-pandas system prompt")
     parser.add_argument(
         "--refresh",
         action="store_true",

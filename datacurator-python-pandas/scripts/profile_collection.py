@@ -21,7 +21,7 @@ from _lib import (  # noqa: E402
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Profile a datacurator collection")
+    parser = argparse.ArgumentParser(description="Profile a datacurator-python-pandas collection")
     parser.add_argument("--collection", required=True, help="Collection folder name")
     args = parser.parse_args()
 
