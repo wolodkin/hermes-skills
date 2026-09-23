@@ -1,0 +1,4 @@
+# MCP server (install separately for Hermes/Cursor MCP config):
+#   pip install mcp-csv-database
+#
+# Skill scripts use Python 3.10+ stdlib only (no pandas).

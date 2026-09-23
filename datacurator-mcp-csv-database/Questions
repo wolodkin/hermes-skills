@@ -1,0 +1,9 @@
+Show me 15 specimens where habitat or locality notes indicate wood-related environments (e.g., wood, Holz, lign-), including AQUiLA-ID, Taxon, Collector, Collection Date, Latitude, and Longitude.
+
+Which columns in annotated_02 have the highest missing-data rates (considering NULL, empty strings, and ‘-’), and are there duplicate records by AQUiLA-ID?
+
+Create a compact data-quality and schema briefing for annotated_02: key fields, likely ontology-JSON columns, and the top consistency risks in taxonomy-related fields.
+
+Which taxa show the widest geographic spread in this collection (based on latitude/longitude range), and how many specimens support each taxon-level result?
+
+Compare marine vs. non-marine records in annotated_02 and summarize differences in habitat, substrate, host-related fields, and collection geography.
