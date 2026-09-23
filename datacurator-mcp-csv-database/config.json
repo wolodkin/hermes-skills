@@ -1,0 +1,15 @@
+{
+    "csv_source_folder_global_path": "./csv_source_folder_global_path",
+    "prompt_template": "./prompt_template.txt",
+    "prompt": {
+        "max_total_chars": 2097152,
+        "description_max_chars": 12000
+    },
+    "mcp": {
+        "server_name": "csv-database"
+    },
+    "query": {
+        "default_limit": 100,
+        "max_limit": 1000
+    }
+}
